@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# LTspice transient/operating-point net dumps that LTspice regenerates
+*.op.raw
+*.fft
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+
+# NOTE: example .raw/.plt/.log are intentionally committed so the worked
+# example opens with results without re-running. Delete them from new circuits
+# if you prefer to keep the repo lean (they regenerate from the .cir).

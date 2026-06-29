@@ -1,0 +1,50 @@
+* ============================================================
+* Simple Half-Bridge LLC Resonant Converter
+* Vin=400V -> Vout~48V, fr~132kHz
+* ============================================================
+.param Vin=400 fsw=132k n=4 Lr=60u Cr=24n Lm=300u
+.param Tsw=1/fsw Tdead=200n
+
+* --- Input DC bus ---
+Vbus VIN 0 {Vin}
+
+* --- Half-bridge: two ideal voltage-controlled switches ---
+S1 VIN SW GH 0 MSW
+S2 SW  0  GL 0 MSW
+.model MSW SW(Ron=0.05 Roff=1Meg Vt=2.5 Vh=0)
+* Anti-parallel body diodes (provide ZVS freewheel path / clamp SW node)
+Dhs SW VIN DBODY
+Dls 0  SW  DBODY
+.model DBODY D(Ron=0.02 Roff=1Meg Vfwd=0.7)
+* MOSFET output capacitance (helps ZVS transition)
+Coss1 VIN SW 150p
+Coss2 SW 0   150p
+
+* --- Complementary gate drive (50% duty, 200ns dead-time) ---
+Vgh GH 0 PULSE(0 5 0       5n 5n {Tsw/2-Tdead} {Tsw})
+Vgl GL 0 PULSE(0 5 {Tsw/2} 5n 5n {Tsw/2-Tdead} {Tsw})
+
+* --- Resonant tank: Cr (series) - Lr (series) - Lm (magnetizing/primary) ---
+Cr SW NA {Cr}
+Lr NA NB {Lr}
+Lp NB 0  {Lm}
+
+* --- Transformer secondary, n:1 step-down ---
+Ls SECA SECB {Lm/(n*n)}
+K1 Lp Ls 0.9999
+
+* --- Secondary full-bridge rectifier ---
+D1 SECA VOUT DMOD
+D2 SECB VOUT DMOD
+D3 0    SECA DMOD
+D4 0    SECB DMOD
+.model DMOD D(Ron=0.02 Roff=1Meg Vfwd=0.55)
+
+* --- Output filter + load (~92W) ---
+Co VOUT 0 47u IC=48
+Rload VOUT 0 25
+
+* --- Simulation: save last 100us (steady state) ---
+.tran 0 300u 200u 20n uic
+.options plotwinsize=0
+.end
